@@ -124,6 +124,17 @@ void Process::updateProcess(uint64_t current_time)
 {
     // use `current_time` to update turnaround time, wait time, burst times, 
     // cpu time, and remaining time
+    /*turn_time = 0;
+    wait_time = 0;
+    cpu_time = 0;
+    remain_time = 0;
+    for (i = 0; i < num_bursts; i+=2)
+    {
+        remain_time += burst_times[i];
+    }*/
+
+
+    
 }
 
 void Process::updateBurstTime(int burst_idx, uint32_t new_time)

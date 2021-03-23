@@ -91,6 +91,32 @@ int main(int argc, char **argv)
         //   - Determine if all processes are in the terminated state
         //   - * = accesses shared data (ready queue), so be sure to use proper synchronization
 
+        //[1]: Get Current Time
+        uint64_t currTime = currentTime();
+
+        //[2]: NotStarted --> Ready Movement
+        for(i = 0; i < processes.size(); i++){
+            if(processes[i]->getState() == Process::State::NotStarted){
+                if((currTime - start) >= processes[i]->getStartTime()){
+                    processes[i]->setState(Process::State::Ready, currTime);
+                    //*** MUTEX WILL BE USED HERE
+                    shared_data->ready_queue.push_back(processes[i]);
+                }
+            }else if(processes[i]->getState() == Process::State::IO){
+                if((currTime - processes[i]->getBurstStartTime()) >= 0){
+                    processes[i]->setState(Process::State::Ready, currTime);
+                    //*** MUTEX WILL BE USED HERE
+                    shared_data->ready_queue.push_back(processes[i]);
+                }
+            }
+
+        }
+
+
+
+
+
+//---------------------------------------------------------------------------------------------------------------//
         // output process status table
         num_lines = printProcessOutput(processes, shared_data->mutex);
 
