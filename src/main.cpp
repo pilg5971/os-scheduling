@@ -91,30 +91,57 @@ int main(int argc, char **argv)
         //   - Determine if all processes are in the terminated state
         //   - * = accesses shared data (ready queue), so be sure to use proper synchronization
 
-        //[1]: Get Current Time
+       //[1]: Get Current Time
         uint64_t currTime = currentTime();
 
-        //[2]: NotStarted --> Ready Movement
+        //Scheduling Checks
         for(i = 0; i < processes.size(); i++){
+            //[2]: NotStarted --> Ready Movement
             if(processes[i]->getState() == Process::State::NotStarted){
                 if((currTime - start) >= processes[i]->getStartTime()){
                     processes[i]->setState(Process::State::Ready, currTime);
                     //*** MUTEX WILL BE USED HERE
-                    shared_data->ready_queue.push_back(processes[i]);
+                    {
+                        std::lock_guard<std::mutex> lock(shared_data->mutex);
+                        shared_data->ready_queue.push_back(processes[i]);
+                    }
                 }
+            
+            //[3]: I/O burst check
             }else if(processes[i]->getState() == Process::State::IO){
-                if((currTime - processes[i]->getBurstStartTime()) >= 0){
+                if((currTime - processes[i]->getBurstStartTime()) >= processes[i]->getBurstArray()[processes[i]->getCurrentBurst()]){ //burst_times[current_burst]
                     processes[i]->setState(Process::State::Ready, currTime);
                     //*** MUTEX WILL BE USED HERE
-                    shared_data->ready_queue.push_back(processes[i]);
+                    {
+                        std::lock_guard<std::mutex> lock(shared_data->mutex);
+                        shared_data->ready_queue.push_back(processes[i]);
+                    }
+                }
+
+            //[4]: Running Interruption
+            }else if(processes[i]->getState() == Process::State::Running){
+                //Time Slice Check
+                if(processes[i]->getCpuTime() > shared_data->time_slice){
+                    processes[i]->interrupt();
+                }
+                //Priority Check ??***
+                if(shared_data->ready_queue.front()->getPriority() < processes[i]->getPriority()){
+                    processes[i]->interrupt();
                 }
             }
-
         }
+        
+        //[5]: Sorting the Ready Queue
 
 
-
-
+        //[6]: Check for completion
+        bool completed = true;
+        for(i = 0; i < processes.size(); i++){
+            if(processes[i]->getState() != Process::State::Terminated){
+                completed = false;
+            }
+        }
+        shared_data->all_terminated = completed;
 
 //---------------------------------------------------------------------------------------------------------------//
         // output process status table
@@ -149,14 +176,35 @@ int main(int argc, char **argv)
 
 void coreRunProcesses(uint8_t core_id, SchedulerData *shared_data)
 {
-    // Work to be done by each core idependent of the other cores
+    
+    // Work to be done by each core independent of the other cores
     // Repeat until all processes in terminated state:
+
     //   - *Get process at front of ready queue
+    Process* currProcess = shared_data->ready_queue.front();
+    shared_data->ready_queue.pop_front();
+
+
     //   - Simulate the processes running until one of the following:
+    uint32_t start = currentTime();
+    uint32_t burstTime = currProcess->getBurstArray()[currProcess->getCurrentBurst()];
+
+    while (currentTime()-start != burstTime)
+    {
+        if(currProcess->isInterrupted())
+        {
+            currProcess->setBurstStartTime(currentTime());
+            break;
+        }
+    }
+    
     //     - CPU burst time has elapsed
     //     - Interrupted (RR time slice has elapsed or process preempted by higher priority process)
     //  - Place the process back in the appropriate queue
     //     - I/O queue if CPU burst finished (and process not finished) -- no actual queue, simply set state to IO
+
+            //set burst start time to current time
+
     //     - Terminated if CPU burst finished and no more bursts remain -- no actual queue, simply set state to Terminated
     //     - *Ready queue if interrupted (be sure to modify the CPU burst time to now reflect the remaining time)
     //  - Wait context switching time

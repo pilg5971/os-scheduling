@@ -56,6 +56,16 @@ uint64_t Process::getBurstStartTime() const
     return burst_start_time;
 }
 
+uint32_t* Process::getBurstArray() const
+{
+    return burst_times;
+}
+
+uint16_t Process::getCurrentBurst() const
+{
+    return current_burst;
+}
+
 Process::State Process::getState() const
 {
     return state;
