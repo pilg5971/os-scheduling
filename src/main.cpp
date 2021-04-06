@@ -120,13 +120,21 @@ int main(int argc, char **argv)
 
             //[4]: Running Interruption
             }else if(processes[i]->getState() == Process::State::Running){
-                //Time Slice Check
-                if(processes[i]->getCpuTime() > shared_data->time_slice){
-                    processes[i]->interrupt();
-                }
-                //Priority Check ??***
-                if(shared_data->ready_queue.front()->getPriority() < processes[i]->getPriority()){
-                    processes[i]->interrupt();
+                {
+                    std::lock_guard<std::mutex> lock(shared_data->mutex);
+                    //Time Slice Check
+                    if(processes[i]->getCpuTime() > shared_data->time_slice){
+                        processes[i]->interrupt();
+                    }
+                    //Priority Check ??***
+                    if(shared_data->algorithm = PP){
+                        shared_data->ready_queue.sort(PpComparator());
+                        for(std::list<Process*>::iterator it = shared_data->ready_queue.begin(); it != shared_data->ready_queue.end(); ++it){
+                            if((*it)->getPriority() < processes[i]->getPriority()){
+                                processes[i]->interrupt();
+                            }
+                        }
+                    }
                 }
             }
         }
