@@ -61,6 +61,7 @@ uint32_t* Process::getBurstArray() const
     return burst_times;
 }
 
+
 uint16_t Process::getCurrentBurst() const
 {
     return current_burst;
@@ -134,16 +135,32 @@ void Process::updateProcess(uint64_t current_time)
 {
     // use `current_time` to update turnaround time, wait time, burst times, 
     // cpu time, and remaining time
-    /*turn_time = 0;
-    wait_time = 0;
-    cpu_time = 0;
+    int32_t io_time = 0;
+
+    //total time spent on a cpu core
+    cpu_time = cpu_time + (current_time - burst_start_time); 
+
+    //updates the array of burst times with remaining ms value of the current burst
+    updateBurstTime(current_burst, burst_times[current_burst]-(current_time-burst_start_time));
+
+    //total time since launch
+    turn_time = current_time - launch_time;
+
+    //time spent in the ready queue is equal to
+    //total time taken by the process(turn_time) - the amount of time spent on bursts up to this point(io_time + cpu_time)
+    for (int i = 1; i < current_burst; i=i+2)
+    {
+        io_time = io_time + burst_times[i];
+    }
+    
+    wait_time = turn_time - (io_time + cpu_time);
+
+    //remain_time is total time of remaining cpu bursts
     remain_time = 0;
-    for (i = 0; i < num_bursts; i+=2)
+    for (int i = 0; i < num_bursts; i=i+2)
     {
         remain_time += burst_times[i];
-    }*/
-
-
+    }
     
 }
 

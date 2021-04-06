@@ -176,6 +176,7 @@ int main(int argc, char **argv)
 
 void coreRunProcesses(uint8_t core_id, SchedulerData *shared_data)
 {
+    //********Still need to include sync protection
     
     // Work to be done by each core independent of the other cores
     // Repeat until all processes in terminated state:
@@ -186,28 +187,42 @@ void coreRunProcesses(uint8_t core_id, SchedulerData *shared_data)
 
 
     //   - Simulate the processes running until one of the following:
-    uint32_t start = currentTime();
-    uint32_t burstTime = currProcess->getBurstArray()[currProcess->getCurrentBurst()];
-
-    while (currentTime()-start != burstTime)
-    {
-        if(currProcess->isInterrupted())
-        {
-            currProcess->setBurstStartTime(currentTime());
-            break;
-        }
-    }
-    
     //     - CPU burst time has elapsed
     //     - Interrupted (RR time slice has elapsed or process preempted by higher priority process)
     //  - Place the process back in the appropriate queue
     //     - I/O queue if CPU burst finished (and process not finished) -- no actual queue, simply set state to IO
-
-            //set burst start time to current time
-
     //     - Terminated if CPU burst finished and no more bursts remain -- no actual queue, simply set state to Terminated
     //     - *Ready queue if interrupted (be sure to modify the CPU burst time to now reflect the remaining time)
+
+    currProcess->setBurstStartTime(currentTime());
+    uint32_t burstTime = currProcess->getBurstArray()[currProcess->getCurrentBurst()];
+
+    //no need to actually do anything in the while loop
+    while (currentTime()-currProcess->getBurstStartTime() != burstTime && currProcess->isInterrupted() == false)
+    {}
+
+    currProcess->updateProcess(currentTime());
+
+    if(currProcess->getRemainingTime() == 0)
+    {
+        currProcess->setState(Process::State::Terminated, currentTime());
+    }
+    else if(currProcess->isInterrupted())
+    {
+        currProcess->setState(Process::State::Ready,currentTime());
+    }
+    else if(currProcess->getState() == Process::State::IO)
+    {
+        currProcess->setState(Process::State::Ready, currentTime());
+    }
+    else if (currProcess->getState() == Process::State::Running)
+    {
+        currProcess->setState(Process::State::IO, currentTime());
+    }
+
     //  - Wait context switching time
+    usleep(shared_data->context_switch);
+    
     //  - * = accesses shared data (ready queue), so be sure to use proper synchronization
 }
 
