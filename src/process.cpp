@@ -177,12 +177,29 @@ void Process::updateBurstTime(int burst_idx, uint32_t new_time)
 bool SjfComparator::operator ()(const Process *p1, const Process *p2)
 {
     // your code here!
-    return false; // change this!
+    //return false; // change this!
+
+    //TRUE = SWAP
+    //FALSE = DONT SWAP
+
+    if(p1->getRemainingTime() > p2->getRemainingTime()){
+        return true;
+    }
+    return false;
+
 }
 
 // PP - comparator for sorting read queue based on priority
 bool PpComparator::operator ()(const Process *p1, const Process *p2)
 {
     // your code here!
-    return false; // change this!
+    //return false; // change this!
+
+    //TRUE = SWAP
+    //FALSE = DONT SWAP
+
+    if(p1->getPriority() > p2->getPriority()){
+        return true;
+    }
+    return false;
 }

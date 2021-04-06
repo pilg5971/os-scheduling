@@ -132,8 +132,19 @@ int main(int argc, char **argv)
         }
         
         //[5]: Sorting the Ready Queue
-
-
+        if(shared_data->algorithm == SJF){ //Sjf Sorting
+            {
+                std::lock_guard<std::mutex> lock(shared_data->mutex);
+                shared_data->ready_queue.sort(SjfComparator());
+            }
+        }
+        else if(shared_data->algorithm == PP){ //PP Sorting
+            {
+                std::lock_guard<std::mutex> lock(shared_data->mutex);
+                shared_data->ready_queue.sort(PpComparator());
+            }
+        }
+        
         //[6]: Check for completion
         bool completed = true;
         for(i = 0; i < processes.size(); i++){
@@ -141,7 +152,13 @@ int main(int argc, char **argv)
                 completed = false;
             }
         }
-        shared_data->all_terminated = completed;
+        if(completed == true){
+            {
+                std::lock_guard<std::mutex> lock(shared_data->mutex);
+                shared_data->all_terminated = true;
+            }
+        }
+
 
 //---------------------------------------------------------------------------------------------------------------//
         // output process status table
