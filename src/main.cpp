@@ -193,21 +193,41 @@ int main(int argc, char **argv)
         usleep(50000);
     }
 
-
     // wait for threads to finish
     for (i = 0; i < num_cores; i++)
     {
         schedule_threads[i].join();
     }
 
-    // print final statistics
+        // print final statistics
+    int index=0;
+    double turnaround = 0.0;
+    double waiting = 0.0;
+    double cpu_time = 0.0;
+
+    for (index; index < processes.size(); index++)
+    {
+        turnaround = turnaround + processes[index]->getTurnaroundTime();
+        waiting = waiting + processes[index]->getWaitTime();
+        cpu_time = cpu_time + processes[index]->getCpuTime();
+    }
     //  - CPU utilization
+    cpu_time = cpu_time/turnaround;
+    //  - Average turnaround time
+    turnaround = turnaround/(double)i;
+    //  - Average waiting time
+    waiting = waiting/(double)i;
+    
+    std::cout<<"Average turnaround time:", turnaround;
+    std::cout<<"Average waiting time:", waiting;
+    std::cout<<"CPU utilization:", cpu_time;
+
+    
+
     //  - Throughput
     //     - Average for first 50% of processes finished
     //     - Average for second 50% of processes finished
     //     - Overall average
-    //  - Average turnaround time
-    //  - Average waiting time
 
 
     // Clean up before quitting program
