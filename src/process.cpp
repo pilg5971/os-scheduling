@@ -29,6 +29,7 @@ Process::Process(ProcessDetails details, uint64_t current_time)
     {
         remain_time += burst_times[i];
     }
+    IOBurstDone = false;
 }
 
 Process::~Process()
@@ -102,6 +103,11 @@ double Process::getRemainingTime() const
     return (double)remain_time / 1000.0;
 }
 
+bool Process::getIOBurstDone() const
+{
+    return IOBurstDone;
+}
+
 void Process::setBurstStartTime(uint64_t current_time)
 {
     burst_start_time = current_time;
@@ -169,6 +175,10 @@ void Process::updateBurstTime(int burst_idx, uint32_t new_time)
     burst_times[burst_idx] = new_time;
 }
 
+void Process::updateIOBurstDone(bool condition){
+    IOBurstDone = condition;
+}
+
 
 // Comparator methods: used in std::list sort() method
 // No comparator needed for FCFS or RR (ready queue never sorted)
@@ -182,7 +192,7 @@ bool SjfComparator::operator ()(const Process *p1, const Process *p2)
     //TRUE = SWAP
     //FALSE = DONT SWAP
 
-    if(p1->getRemainingTime() > p2->getRemainingTime()){
+    if(p1->getRemainingTime() <= p2->getRemainingTime()){
         return true;
     }
     return false;
@@ -198,7 +208,7 @@ bool PpComparator::operator ()(const Process *p1, const Process *p2)
     //TRUE = SWAP
     //FALSE = DONT SWAP
 
-    if(p1->getPriority() > p2->getPriority()){
+    if(p1->getPriority() <= p2->getPriority()){
         return true;
     }
     return false;

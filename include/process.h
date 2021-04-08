@@ -24,6 +24,7 @@ private:
     int32_t cpu_time;           // total time spent running on a CPU core
     int32_t remain_time;        // CPU time remaining until terminated
     uint64_t launch_time;       // actual time in ms (since epoch) that process was 'launched'
+    bool IOBurstDone;
     // you are welcome to add other private data fields here if you so choose
 
 public:
@@ -43,6 +44,7 @@ public:
     double getWaitTime() const;
     double getCpuTime() const;
     double getRemainingTime() const;
+    bool getIOBurstDone() const;
 
     void setBurstStartTime(uint64_t current_time);
     void setState(State new_state, uint64_t current_time);
@@ -52,6 +54,7 @@ public:
 
     void updateProcess(uint64_t current_time);
     void updateBurstTime(int burst_idx, uint32_t new_time);
+    void updateIOBurstDone(bool condition);
 };
 
 // Comparators: used in std::list sort() method
