@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 
     // Main thread work goes here
     int num_lines = 0;
-    uint64_t currTime;
+    //uint64_t currTime;
     while (!(shared_data->all_terminated))
     {
         // Clear output from previous iteration
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
         //   - * = accesses shared data (ready queue), so be sure to use proper synchronization
 
        //[1]: Get Current Time
-        currTime = currentTime();
+        uint64_t currTime = currentTime();
 
         //Scheduling Checks
         for(i = 0; i < processes.size(); i++){
@@ -114,11 +114,13 @@ int main(int argc, char **argv)
             }else if(processes[i]->getState() == Process::State::IO){
                 //std::cout << "Checkpoint #2" << std::endl;
                 //if((currTime - processes[i]->getBurstStartTime()) >= (processes[i]->getBurstArray()[processes[i]->getCurrentBurst()])){ //burst_times[current_burst]
-                if(processes[i]->getIOBurstDone() == true){
-                    processes[i]->updateIOBurstDone(false);
-                    std::cout << "Changing the State" << std::endl;
+                if((processes[i]->getBurstStartTime() + processes[i]->getCurrentBurst()) <= currTime){
+                //if(processes[i]->getIOBurstDone() == true){                    
+                    //processes[i]->updateIOBurstDone(false);
+                    //std::cout << "Changing the State" << std::endl;
                     processes[i]->setState(Process::State::Ready, currTime);
-                    std::cout << processes[i]->getState() << std::endl;
+                    processes[i]->addCurrentBurst();
+                    //std::cout << processes[i]->getState() << std::endl;
 
                     //*** MUTEX WILL BE USED HERE
                     {
@@ -175,6 +177,7 @@ int main(int argc, char **argv)
         }
         if(completed == true){
             {
+                //std::cout << "Closing Code" << std::endl;
                 std::lock_guard<std::mutex> lock(shared_data->mutex);
                 shared_data->all_terminated = true;
             }
@@ -183,6 +186,7 @@ int main(int argc, char **argv)
 
 //---------------------------------------------------------------------------------------------------------------//
         // output process status table
+        
         num_lines = printProcessOutput(processes, shared_data->mutex);
 
         // sleep 50 ms
@@ -207,6 +211,7 @@ int main(int argc, char **argv)
 
 
     // Clean up before quitting program
+    //std::cout << "Code Closed" << std::endl;
     processes.clear();
 
     return 0;
@@ -255,28 +260,31 @@ void coreRunProcesses(uint8_t core_id, SchedulerData *shared_data)
 
             currProcess->updateProcess(currentTime());
 
-            if(currProcess->getRemainingTime() == 0)
+            if(currProcess->getRemainingTime() <= 0)
             {
                 currProcess->setState(Process::State::Terminated, currentTime());
             }
             else if(currProcess->isInterrupted())
             {
+                currProcess->updateBurstTime(currProcess->getCurrentBurst(), currProcess->getBurstArray()[currProcess->getCurrentBurst()]-(currentTime()-currProcess->getBurstStartTime()));                
+                currProcess->setState(Process::State::Ready,currentTime());
                 {
                     std::lock_guard<std::mutex> lock(shared_data->mutex);
-                    currProcess->setState(Process::State::Ready,currentTime());
-                    shared_data->ready_queue.push_back(currProcess);
+                    shared_data->ready_queue.push_back(currProcess);                    
                 }
                 
             }
             else if (currProcess->getState() == Process::State::Running)
             {
+                currProcess->addCurrentBurst();
                 currProcess->setState(Process::State::IO, currentTime());
+
             }
 
-            else if (currProcess->getState() == Process::State::IO)
+            /*else if (currProcess->getState() == Process::State::IO)
             {
                 currProcess->updateIOBurstDone(true);
-            }
+            }*/
 
             //  - Wait context switching time
             usleep(shared_data->context_switch);

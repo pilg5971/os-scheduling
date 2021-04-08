@@ -37,6 +37,10 @@ Process::~Process()
     delete[] burst_times;
 }
 
+void Process::addCurrentBurst(){
+    current_burst++;
+}
+
 uint16_t Process::getPid() const
 {
     return pid;
